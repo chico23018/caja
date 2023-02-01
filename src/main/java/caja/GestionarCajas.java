@@ -1,5 +1,6 @@
 package caja;
 
+import java.awt.Color;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
@@ -180,13 +181,11 @@ public class GestionarCajas extends JFrame {
 
 			Connection cn = Conezione.conetar();
 			PreparedStatement ps = cn
-					.prepareStatement("select tipo , tamano, cantidad from caja where id='" + idcaja + "'");
+					.prepareStatement("select  cantidad from caja where id='" + idcaja + "'");
 			ResultSet rs = ps.executeQuery();
 
 			if (rs.next()) {
 
-				tipo.setText(rs.getString("tipo"));
-				tamano.setText(rs.getString("tamano"));
 				cantidad.setText(rs.getString("cantidad"));
 
 				cantidadstring = cantidad.getText();
@@ -216,27 +215,47 @@ public class GestionarCajas extends JFrame {
 	}
 
 	protected void handle_modificar_actionPerformed(ActionEvent e) {
-
+      int validacion = 0;
 		String tipo1, tamano1;
 		tipo1 = tipo.getText().trim();
 		tamano1 = tamano.getText().trim();
-
+		if (tipo1.equals("")) {
+			tipo.setBackground(Color.RED);
+			validacion++;
+		}
+		if (tamano1.equals("")) {
+			tamano.setBackground(Color.RED);
+			validacion++;
+		}
+		
+        if (validacion==0) {
+			
+		
 		try {
 
 			Connection cn = Conezione.conetar();
-			PreparedStatement ps = cn.prepareStatement("update tipo , tamano from caja where id='" + idcaja + "'");
-
+			PreparedStatement ps = cn.prepareStatement("update caja set tipo=? , tamano=?  where id='" + idcaja + "'");
+              ps.setString(1, tipo1);
+              ps.setString(2, tamano1);
+              ps.executeUpdate();
+              JOptionPane.showMessageDialog(null, "caja actualizada");
 		} catch (Exception e2) {
 			// TODO: handle exception
 		}
+        }else {
+        	JOptionPane.showMessageDialog(null, "Debes llenar las casillas");
+        }
 	}
 
 	protected void handle_usar_actionPerformed(ActionEvent e) {
+		int validacion = 0;
 		String usar1 = usarcajas.getText().trim();
+		
+		
 		if (usar1.equals("")) {
-			JOptionPane.showMessageDialog(null, "Casilla vacia, tienes que indar un numero");
-
-		} else {
+			usarcajas.setBackground(Color.RED);
+			validacion++;
+			} if (validacion==0){
 			int usar2, recuparar, resta;
 			usar2 = Integer.parseInt(usar1);
 			recuparar = Integer.parseInt(cantidadstring);
@@ -267,6 +286,8 @@ public class GestionarCajas extends JFrame {
 				JOptionPane.showMessageDialog(null, "No tienes suficientes cajas");
 
 			}
+		}else {
+			JOptionPane.showMessageDialog(null, "Casilla vacia, tienes que indar un numero");
 		}
 
 	}
