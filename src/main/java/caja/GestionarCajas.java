@@ -2,29 +2,34 @@ package caja;
 
 import java.awt.Color;
 import java.awt.EventQueue;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-
-import com.mysql.cj.xdevapi.PreparableStatement;
-
-import java.awt.Toolkit;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.ImageIcon;
-import javax.swing.JTextField;
-import javax.swing.JButton;
-import javax.swing.SwingConstants;
 import java.awt.Font;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.awt.event.ActionEvent;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
+
+import caja.conezione.Jpa;
+import caja.dao.CajaDao;
+import caja.dao.impl.CajaDaoImple;
+import caja.model.Caja;
 
 public class GestionarCajas extends JFrame {
+	Caja caja2 = new Caja();
+	CajaDao cajaDao = new CajaDaoImple();
+	private EntityManager em = Jpa.getEntityManagerFactory().createEntityManager();
 
 	int idcaja = Cajas.idcaja_update;
 	String cantidadstring;
@@ -177,45 +182,22 @@ public class GestionarCajas extends JFrame {
 		lblNewLabel.setBounds(0, 0, 624, 415);
 		contentPane.add(lblNewLabel);
 
-		try {
-
-			Connection cn = Conezione.conetar();
-			PreparedStatement ps = cn
-					.prepareStatement("select  cantidad from caja where id='" + idcaja + "'");
-			ResultSet rs = ps.executeQuery();
-
-			if (rs.next()) {
-
-				cantidad.setText(rs.getString("cantidad"));
-
-				cantidadstring = cantidad.getText();
-
-			}
-
-		} catch (Exception e2) {
-			// TODO: handle exception
-		}
-
+		caja2 = cajaDao.find(idcaja);
+		cantidad.setText(caja2.getCantidad());
+		tipo.setText(caja2.getTipo());
+		tamano.setText(caja2.getTamano());
 	}
 
 	protected void handle_Eliminar_actionPerformed(ActionEvent e) {
 
-		try {
-			Connection cn = Conezione.conetar();
-			PreparedStatement ps = cn.prepareStatement("delete from caja where id='" + idcaja + "'");
+		cajaDao.eliminare(idcaja);
+		JOptionPane.showMessageDialog(null, "Caja eliminada");
+		this.dispose();
 
-			ps.executeUpdate();
-
-			JOptionPane.showMessageDialog(null, "Caja eliminada");
-			this.dispose();
-
-		} catch (Exception e2) {
-			// TODO: handle exception
-		}
 	}
 
 	protected void handle_modificar_actionPerformed(ActionEvent e) {
-      int validacion = 0;
+		int validacion = 0;
 		String tipo1, tamano1;
 		tipo1 = tipo.getText().trim();
 		tamano1 = tamano.getText().trim();
@@ -227,105 +209,54 @@ public class GestionarCajas extends JFrame {
 			tamano.setBackground(Color.RED);
 			validacion++;
 		}
-		
-        if (validacion==0) {
-			
-		
-		try {
 
-			Connection cn = Conezione.conetar();
-			PreparedStatement ps = cn.prepareStatement("update caja set tipo=? , tamano=?  where id='" + idcaja + "'");
-              ps.setString(1, tipo1);
-              ps.setString(2, tamano1);
-              ps.executeUpdate();
-              JOptionPane.showMessageDialog(null, "caja actualizada");
-		} catch (Exception e2) {
-			// TODO: handle exception
+		if (validacion == 0) {
+			caja2.setTipo(tipo1);
+			caja2.setTamano(tamano1);
+			cajaDao.update(caja2);
+			JOptionPane.showMessageDialog(null, "caja actualizada");
+			this.dispose();
+
+		} else {
+			JOptionPane.showMessageDialog(null, "Debes llenar las casillas");
 		}
-        }else {
-        	JOptionPane.showMessageDialog(null, "Debes llenar las casillas");
-        }
 	}
 
 	protected void handle_usar_actionPerformed(ActionEvent e) {
 		int validacion = 0;
 		String usar1 = usarcajas.getText().trim();
-		
-		
+
 		if (usar1.equals("")) {
 			usarcajas.setBackground(Color.RED);
 			validacion++;
-			} if (validacion==0){
-			int usar2, recuparar, resta;
-			usar2 = Integer.parseInt(usar1);
-			recuparar = Integer.parseInt(cantidadstring);
-
-			if (usar2 <= recuparar) {
-
-				resta = recuparar - usar2;
-				String cargar = String.valueOf(resta);
-				System.out.println(cargar);
-				try {
-					Connection cn = Conezione.conetar();
-					PreparedStatement ps = cn.prepareStatement("update caja set cantidad = ?where id='" + idcaja + "'");
-					ps.setString(1, cargar);
-					ps.executeUpdate();
-
-					JOptionPane.showMessageDialog(null, "Has usado " + cargar);
-					this.dispose();
-
-				} catch (SQLException e2) {
-					System.out.println("Error en cargar "+ e2);
-					
-				}
-
-			}
-
-			else {
-
-				JOptionPane.showMessageDialog(null, "No tienes suficientes cajas");
-
-			}
-		}else {
+		}
+		if (validacion == 0) {
+			int usar2 = Integer.parseInt(usar1);
+			cajaDao.Usar(idcaja, usar2);
+			JOptionPane.showMessageDialog(null, "Has usado  " + usar2 + " cajas");
+			this.dispose();
+		} else {
 			JOptionPane.showMessageDialog(null, "Casilla vacia, tienes que indar un numero");
 		}
 
 	}
 
 	protected void handle_Agregar_actionPerformed(ActionEvent e) {
-		String usar1 = agregar.getText().trim();
+
+		String usar1 = "";
+
 		if (usar1.equals("")) {
+			agregar.setBackground(Color.RED);
 			JOptionPane.showMessageDialog(null, "Casilla vacia, tienes que indar un numero");
 
-		}else {
-			int usar2, recuparar, resta;
-			usar2 = Integer.parseInt(usar1);
-			recuparar = Integer.parseInt(cantidadstring);
+		} else {
+			int usar2 = Integer.parseInt(usar1);
+			cajaDao.agregar(idcaja, usar2);
 
-			
+			JOptionPane.showMessageDialog(null, "Has agregador  " + usar2 + " cajas");
+			this.dispose();
 
-				resta = recuparar + usar2;
-				String cargar = String.valueOf(resta);
-				System.out.println(cargar);
-				try {
-					Connection cn = Conezione.conetar();
-					PreparedStatement ps = cn.prepareStatement("update caja set cantidad = ?where id='" + idcaja + "'");
-					ps.setString(1, cargar);
-					ps.executeUpdate();
+		}
+	}
 
-					JOptionPane.showMessageDialog(null, "Has agregador  " + usar2+ " cajas");
-					this.dispose();
-
-				} catch (SQLException e2) {
-					System.out.println("Error en cargar "+ e2);
-					
-				}
-
-			
-
-			
-		
-		
-		}}	
-	
 }

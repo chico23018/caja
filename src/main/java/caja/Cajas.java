@@ -2,6 +2,7 @@ package caja;
 
 import java.awt.Color;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,7 +12,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -24,9 +30,15 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
-import java.awt.Font;
+
+import caja.conezione.Jpa;
+import caja.dao.CajaDao;
+import caja.dao.impl.CajaDaoImple;
+import caja.model.Caja;
 
 public class Cajas extends JFrame {
+	Caja caja = new Caja();
+	CajaDao cajaDao = new CajaDaoImple();
 	DefaultTableModel model = new DefaultTableModel();
 
 	private JPanel contentPane;
@@ -95,57 +107,30 @@ public class Cajas extends JFrame {
 		agregar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				String tipo1, tamano1, cantidad1;
-
-				tipo1 = tipo.getText().trim();
-				tamano1 = tamano.getText().trim();
-				cantidad1 = cantidad.getText().trim();
-
+				caja.setTipo(tipo.getText().trim());
+				caja.setTamano(tamano.getText().trim());
+				caja.setCantidad(cantidad.getText().trim());
 				int validacion = 0;
 
-				if (tipo1.equals("")) {
+				if (caja.getTipo().equals("")) {
 					tipo.setBackground(Color.red);
 					validacion++;
 				}
-				if (tamano1.equals("")) {
+				if (caja.getTamano().equals("")) {
 					tamano.setBackground(Color.red);
 					validacion++;
 				}
-				if (cantidad1.equals("")) {
+				if (caja.getCantidad().equals("")) {
 					cantidad.setBackground(Color.red);
 					validacion++;
 				}
 
-				try {
-					Connection cn = Conezione.conetar();
-					PreparedStatement ps = cn
-							.prepareStatement("select tipo, tamano from caja where tipo = '" + tipo1 + "'");
+				if (validacion == 0) {
 
-					ResultSet rs = ps.executeQuery();
-					if (rs.next()) {
+					cajaDao.inseri(caja);
 
-						JOptionPane.showMessageDialog(null, "tipo de caja ya excistente en el sistema");
-
-					} else {
-
-						if (validacion == 0) {
-
-							Connection cn1 = Conezione.conetar();
-							PreparedStatement ps1 = cn1.prepareStatement("insert into caja values(?,?,?,?)");
-							ps1.setInt(1, 0);
-							ps1.setString(2, tipo1);
-							ps1.setString(3, tamano1);
-							ps1.setString(4, cantidad1);
-							ps1.executeUpdate();
-
-						} else {
-							JOptionPane.showMessageDialog(null, "debes llenar todas las casilla");
-						}
-
-					}
-
-				} catch (SQLException e2) {
-					System.err.print("error en cargar cajas " + e2);
+				} else {
+					JOptionPane.showMessageDialog(null, "debes llenar todas las casilla");
 				}
 
 				Limpiar();
@@ -161,40 +146,48 @@ public class Cajas extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 
 				String seleccion = tipo.getText();
-				String query = "";
-
 				model.setRowCount(0);
 				model.setColumnCount(0);
-				try {
-					Connection cn = Conezione.conetar();
 
-					if (seleccion.equals("")) {
-						query = "select ID, tipo, tamano, cantidad from caja";
+				jTable_equipo = new JTable(model);
+				jScrollPane_equipos_1.setViewportView(jTable_equipo);
+				model.addColumn("");
+				model.addColumn("tipo");
+				model.addColumn("Tamaño");
+				model.addColumn("Cantidad");
 
-					} else {
-						query = "select ID, tipo, tamano, cantidad from caja where tipo='" + seleccion + "'";
-					}
-					PreparedStatement ps = cn.prepareStatement(query);
-					ResultSet rs = ps.executeQuery();
-					jTable_equipo = new JTable(model);
-					jScrollPane_equipos_1.setViewportView(jTable_equipo);
-					model.addColumn("");
-					model.addColumn("tipo");
-					model.addColumn("Tamaño");
-					model.addColumn("Cantidad");
+				EntityManager em = Jpa.getEntityManagerFactory().createEntityManager();
 
-					while (rs.next()) {
+				if (seleccion.equals("")) {
+
+					for (Caja caja1 : cajaDao.allFind()) {
 						Object[] fila = new Object[4];
-						for (int i = 0; i < 4; i++) {
-							fila[i] = rs.getObject(i + 1);
-						}
+
+						fila[0] = caja1.getId();
+						fila[1] = caja1.getTipo();
+
+						fila[2] = caja1.getTamano();
+						fila[3] = caja1.getCantidad();
+
+						model.addRow(fila);
+					}
+				} else {
+					try {
+						Query q = em.createQuery("SELECT c FROM Caja c WHERE c.tipo = ?2").setParameter(2, seleccion);
+						Caja caja1 = (Caja) q.getSingleResult();
+
+						Object[] fila = new Object[4];
+						fila[0] = caja1.getId();
+						fila[1] = caja1.getTipo();
+
+						fila[2] = caja1.getTamano();
+						fila[3] = caja1.getCantidad();
 						model.addRow(fila);
 
-					}
-					cn.close();
+					} catch (NoResultException nre) {
 
-				} catch (SQLException l) {
-					System.err.println("Error en la coneccion  boton mostra " + l);
+					}
+
 				}
 
 				ObtenerDatosTabla();
@@ -231,29 +224,23 @@ public class Cajas extends JFrame {
 		wallpaper.setBounds(0, 0, 521, 391);
 		contentPane.add(wallpaper);
 
-		try {
-			Connection cn = Conezione.conetar();
-			PreparedStatement ps = cn.prepareStatement("select ID, tipo, tamano, cantidad from caja");
-			ResultSet rs = ps.executeQuery();
+		model.addColumn("");
+		model.addColumn("tipo");
+		model.addColumn("Tamaño");
+		model.addColumn("Cantidad");
+		EntityManager em = Jpa.getEntityManagerFactory().createEntityManager();
+		
 
-			model.addColumn("");
-			model.addColumn("tipo");
-			model.addColumn("Tamaño");
-			model.addColumn("Cantidad");
+		for (Caja caja1 : cajaDao.allFind()) {
+			Object[] fila = new Object[4];
 
-			while (rs.next()) {
-				Object[] fila = new Object[4];
-				for (int i = 0; i < 4; i++) {
-					fila[i] = rs.getObject(i + 1);
+			fila[0] = caja1.getId();
+			fila[1] = caja1.getTipo();
 
-				}
-				model.addRow(fila);
+			fila[2] = caja1.getTamano();
+			fila[3] = caja1.getCantidad();
 
-			}
-
-			cn.close();
-		} catch (SQLException e) {
-			System.err.println("Errror en recupere gestionar de cliente " + e);
+			model.addRow(fila);
 		}
 
 		ObtenerDatosTabla();
@@ -270,8 +257,6 @@ public class Cajas extends JFrame {
 					idcaja_update = (int) model.getValueAt(fila_point, columma_point);
 					GestionarCajas cajas = new GestionarCajas();
 					cajas.setVisible(true);
-					
-	
 
 				}
 

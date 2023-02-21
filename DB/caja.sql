@@ -26,12 +26,14 @@ CREATE TABLE IF NOT EXISTS `caja` (
   `tamano` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `cantidad` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dump dei dati della tabella caja.caja: ~2 rows (circa)
+-- Dump dei dati della tabella caja.caja: ~4 rows (circa)
 REPLACE INTO `caja` (`id`, `tipo`, `tamano`, `cantidad`) VALUES
-	(1, 'R', '120x100x30', '50'),
-	(2, 'P', '150x60x29', '50');
+	(1, 'R', '120x130x15', '100'),
+	(2, 'P', '150x60x29', '40'),
+	(6, 'N', '120x130x10', '60'),
+	(7, 'S', '180x130x50', '100');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
