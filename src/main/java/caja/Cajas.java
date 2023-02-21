@@ -69,6 +69,7 @@ public class Cajas extends JFrame {
 	 * Create the frame.
 	 */
 	public Cajas() {
+		setResizable(false);
 		setIconImage(Toolkit.getDefaultToolkit().getImage(Cajas.class.getResource("/imaganes/icon.png")));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 529, 430);
@@ -107,7 +108,7 @@ public class Cajas extends JFrame {
 		agregar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				caja.setTipo(tipo.getText().trim());
+				caja.setTipo(tipo.getText().toUpperCase().trim());
 				caja.setTamano(tamano.getText().trim());
 				caja.setCantidad(cantidad.getText().trim());
 				int validacion = 0;

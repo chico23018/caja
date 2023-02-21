@@ -38,7 +38,7 @@ public class CajaDaoImple implements CajaDao {
 		em.persist(n);
 
 		t.commit();
-	em.close();
+	
 	}
 	}
 
